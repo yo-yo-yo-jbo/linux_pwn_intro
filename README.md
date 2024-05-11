@@ -27,13 +27,28 @@ Let's see an example!
 
 int main()
 {
-    char buf[100] = { 0 };
+    char buf[10] = { 0 };
 
-    scanf("Please enter your name: ", buf);
+    printf("Please enter your name: ");
+    scanf("%s", buf);
     printf("Welcome %s!\n", buf);
     return 0;
 }
 ```
 
+Here, supplying an input larger than 9 characters overflows the stack. If you think it's an unrealistic scenario you are more than welcome to read my blogpost about a [remotely triggerable buffer overflow in ChromeOS](https://www.microsoft.com/en-us/security/blog/2022/08/19/uncovering-a-chromeos-remote-memory-corruption-vulnerability/) I reported the other day.  
+Note that even `main` has a return address, so the scenario is totally viable. Here's what happens on a normal Linux box:
+
+```shell
+jbo@jbo-nix:~/pwn$ gcc -opwn ./pwn.c
+jbo@jbo-nix:~/pwn$ ./pwn
+Please enter your name: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+Welcome AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA!
+*** stack smashing detected ***: terminated
+Aborted (core dumped)
+```
+
+I will talk aboyt that `*** stack smashing detected ***` part later, but that's basically a sign we have overflown the stack.  
+If we wanted to be more subtle, 
 
 
