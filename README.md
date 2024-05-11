@@ -18,3 +18,22 @@ The most prevalent architectures nowadays are `Intel` and `ARM`, so we can descr
 - On Intel architectures, everytime we use a `call` instruction we essentially push the `RIP` (instruction pointer) on the stack and `jmp` somewhere else (changing `RIP` value), so it's obvious the return address is saved on the stack.
 - In ARM architectures, calling a function is done via the `bl` instruction (or `blx` if the CPU's mode might change). This places the `PC` register (the program counter register) onto another register called `LR` (called Link register) and then changes `PC` to point to the destination address. While this has no pushes to the stack, it means the *old* `LR` value needs to be saved somewhere, which is the stack (unless we have a leaf function or some compiler optimization).
 
+How does one overflow the stack? Commonly there are a few unsafe C runtime functions (such as [sprintf](https://cplusplus.com/reference/cstdio/sprintf/) or [strcpy](https://cplusplus.com/reference/cstdio/strcpy)) as well as raw memory operations (such as assigning a value in an array with an attacker controlled index) that can cause out-of-bounds.  
+Let's see an example!
+
+```c
+#include <stdio.h>
+#include <string.h>
+
+int main()
+{
+    char buf[100] = { 0 };
+
+    scanf("Please enter your name: ", buf);
+    printf("Welcome %s!\n", buf);
+    return 0;
+}
+```
+
+
+
