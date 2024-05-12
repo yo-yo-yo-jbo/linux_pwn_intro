@@ -90,6 +90,50 @@ The same idea but applies to the program `heap` instead of the `stack`. The heap
 It is a fascinating subject since exploitation here depends a lot on the heap implementation (several popular ones are `dlmalloc`, `ptmalloc`, `jemalloc` and of course the `glibc heap` which was derived from `ptmalloc`).  
 There are several ideas when it comes to heap overflows that focus on modifying the heap metadata (which is usually saved a few bytes before an allocated chunk).
 
+### Out-of-bounds
+These usually happen when a programmer doesn't take certain edge cases into account. Some of those could just be `off-by-one` bugs, others could just forget about negative numbers entirely!  
+Here's a nice example:
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+
+#define GAME_SIZE (50)
+
+int main()
+{
+    int game[GAME_SIZE] = { 0 };
+    int choice = 0;
+
+    // Choose a random value
+    srand(time(NULL));
+    game[rand() % GAME_SIZE] = 1;
+
+    // Get the user choice
+    printf("Please enter a number between 0 and %d: ", GAME_SIZE - 1);
+    scanf("%d", &choice);
+    if (GAME_SIZE - 1 < choice)
+    {
+        printf("Invalid choice!\n");
+        return -1;
+    }
+
+    // Check user choice
+    if (game[choice])
+    {
+        printf("Winner!\n");
+    }
+    else
+    {
+        printf("Loser!\n");
+    }
+
+    return 0;
+}
+```
+
+
 ### Integer overflows
 Integer overflows and underflows are very hard to spot, and therefore, very hard to detect, and they could lead to out-of-bounds access that turns into a buffer overflow.  
 `Integer overflows` are cases where an integer goes beyond its variable size. For example, take a look at the following code and execution:
@@ -99,7 +143,15 @@ Integer overflows and underflows are very hard to spot, and therefore, very hard
 
 int main()
 {
+    unsigned short len = 0;
+    char name[256] = { 0 };
+
+    printf("Please enter the number of random characters you wish to generate: ");
+    scanf("%u", &len);
+    len += 6;        // Room for prefix
+
     
+
     return 0;
 }
 ```
