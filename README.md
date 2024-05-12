@@ -55,20 +55,34 @@ If we wanted to be more subtle, we could abuse a stack-based buffer overflow for
 #include <stdio.h>
 #include <string.h>
 
+typedef struct
+{
+    char name[10];
+    char prefix[10];
+} greeting_t;
+
 int main()
 {
-    volatile int x = 0;
-    char buf[10] = { 0 };
+    greeting_t greeting = { 0 };
 
+    strcpy(greeting.prefix, "Hello");
     printf("Please enter your name: ");
-    scanf("%s", buf);
-    printf("Welcome %s!\n", buf);
-    if (0 != x)
-    {
-        printf("This is quite unexpected!\n");
-    }
+    scanf("%s", greeting.name);
+    printf("%s %s!\n", greeting.prefix, greeting.name);
     return 0;
 }
 ```
+
+And the output:
+
+```shell
+jbo@jbo-nix:~/pwn$ gcc -O0 -opwn ./pwn.c
+jbo@jbo-nix:~/pwn$ ./pwn
+Please enter your name: AAAAAAAAAAGoodbye
+Goodbye AAAAAAAAAAGoodbye!
+```
+
+Note how surprising it is, we were expecting to see `Hello` and instead got `Goodbye`, due to overflowing the stack.  
+Note that the `struct` that I defined is there just to assure a certain order on the stack, as `gcc` has certain heuristics to arrange local variables. I do hope the point is clear!  
 
 
