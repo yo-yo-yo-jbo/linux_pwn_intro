@@ -90,8 +90,18 @@ The same idea but applies to the program `heap` instead of the `stack`. The heap
 It is a fascinating subject since exploitation here depends a lot on the heap implementation (several popular ones are `dlmalloc`, `ptmalloc`, `jemalloc` and of course the `glibc heap` which was derived from `ptmalloc`).  
 There are several ideas when it comes to heap overflows that focus on modifying the heap metadata (which is usually saved a few bytes before an allocated chunk).
 
-### Integer issues
-Integer overflows and underflows are very hard to spot, and therefore, very hard to detect, and they could lead to out-of-bounds access that turns into a buffer overflow.
-- `Overflows` are cases where an integer goes beyond its variable size. For example, an `unsigned int`
+### Integer overflows
+Integer overflows and underflows are very hard to spot, and therefore, very hard to detect, and they could lead to out-of-bounds access that turns into a buffer overflow.  
+`Integer overflows` are cases where an integer goes beyond its variable size. For example, take a look at the following code and execution:
+
+```c
+#include <stdio.h>
+
+int main()
+{
+    
+    return 0;
+}
+```
 
 
