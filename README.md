@@ -133,6 +133,13 @@ int main()
 }
 ```
 
+There is a check here that ensures the user choice doesn't exceed the game array. However, the choice is a *signed* integer so it might be negative!
+
+```shell
+jbo@jbo-nix:~/pwn$ ./pwn
+Please enter a number between 0 and 49: -1
+Winner!
+```
 
 ### Integer overflows
 Integer overflows and underflows are very hard to spot, and therefore, very hard to detect, and they could lead to out-of-bounds access that turns into a buffer overflow.  
