@@ -85,4 +85,13 @@ Goodbye AAAAAAAAAAGoodbye!
 Note how surprising it is, we were expecting to see `Hello` and instead got `Goodbye`, due to overflowing the stack.  
 Note that the `struct` that I defined is there just to assure a certain order on the stack, as `gcc` has certain heuristics to arrange local variables. I do hope the point is clear!  
 
+### Heap-based buffer overflow
+The same idea but applies to the program `heap` instead of the `stack`. The heap is where all the [dynamic allocations](https://en.wikipedia.org/wiki/C_dynamic_memory_allocation) occur (such as `malloc`, `calloc`, `free`).  
+It is a fascinating subject since exploitation here depends a lot on the heap implementation (several popular ones are `dlmalloc`, `ptmalloc`, `jemalloc` and of course the `glibc heap` which was derived from `ptmalloc`).  
+There are several ideas when it comes to heap overflows that focus on modifying the heap metadata (which is usually saved a few bytes before an allocated chunk).
+
+### Integer issues
+Integer overflows and underflows are very hard to spot, and therefore, very hard to detect, and they could lead to out-of-bounds access that turns into a buffer overflow.
+- `Overflows` are cases where an integer goes beyond its variable size. For example, an `unsigned int`
+
 
