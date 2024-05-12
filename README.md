@@ -40,7 +40,7 @@ Here, supplying an input larger than 9 characters overflows the stack. If you th
 Note that even `main` has a return address, so the scenario is totally viable. Here's what happens on a normal Linux box:
 
 ```shell
-jbo@jbo-nix:~/pwn$ gcc -opwn ./pwn.c
+jbo@jbo-nix:~/pwn$ gcc -O0 -opwn ./pwn.c
 jbo@jbo-nix:~/pwn$ ./pwn
 Please enter your name: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 Welcome AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA!
@@ -48,7 +48,27 @@ Welcome AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA!
 Aborted (core dumped)
 ```
 
-I will talk aboyt that `*** stack smashing detected ***` part later, but that's basically a sign we have overflown the stack.  
-If we wanted to be more subtle, 
+I will talk about that `*** stack smashing detected ***` part later, but that's basically a sign we have overflown the stack. Also note I use the `-O0` flag to dsiable `gcc` optimizations.  
+If we wanted to be more subtle, we could abuse a stack-based buffer overflow for overriding a local variable:
+
+```c
+#include <stdio.h>
+#include <string.h>
+
+int main()
+{
+    volatile int x = 0;
+    char buf[10] = { 0 };
+
+    printf("Please enter your name: ");
+    scanf("%s", buf);
+    printf("Welcome %s!\n", buf);
+    if (0 != x)
+    {
+        printf("This is quite unexpected!\n");
+    }
+    return 0;
+}
+```
 
 
