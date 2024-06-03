@@ -258,3 +258,57 @@ $ exit
 ```
 
 ## Stack protections
+Earlier I mentioned a special `gcc` flag I was using - `-fno-stack-protector`. Let us experiment and remove that!
+
+```shell
+$ gcc -fno-stack-protector -w -o chall chall.c
+/usr/bin/ld: /tmp/ccKU8W4q.o: in function `say_hello':
+chall.c:(.text+0x57): warning: the `gets' function is dangerous and should not be used.
+$ ./solve.py
+[+] Starting local process './chall': pid 16628
+Traceback (most recent call last):
+  File "/home/jbo/pwn_learn/./solve.py", line 6, in <module>
+    p.recvuntil(b'woot!\n')
+  File "/home/jbo/.local/lib/python3.10/site-packages/pwnlib/tubes/tube.py", line 341, in recvuntil
+    res = self.recv(timeout=self.timeout)
+  File "/home/jbo/.local/lib/python3.10/site-packages/pwnlib/tubes/tube.py", line 106, in recv
+    return self._recv(numb, timeout) or b''
+  File "/home/jbo/.local/lib/python3.10/site-packages/pwnlib/tubes/tube.py", line 176, in _recv
+    if not self.buffer and not self._fillbuffer(timeout):
+  File "/home/jbo/.local/lib/python3.10/site-packages/pwnlib/tubes/tube.py", line 155, in _fillbuffer
+    data = self.recv_raw(self.buffer.get_fill_size())
+  File "/home/jbo/.local/lib/python3.10/site-packages/pwnlib/tubes/process.py", line 688, in recv_raw
+    raise EOFError
+EOFError
+[*] Process './chall' stopped with exit code -6 (SIGABRT) (pid 16628)
+```
+
+What happened? Perhaps we should try with `printf` like before:
+
+```shell
+$ printf "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\xFE\xCA\x37\x13" | ./chall
+What is your name? Hello AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA��7!
+*** stack smashing detected ***: terminated
+Aborted (core dumped)
+```
+
+Notice how the process crashed with the words `*** stack smashing detected ***`? This is a mechanism aginast stack-based buffer overflows!  
+Disassembling will show you slight differences.  
+In the function prologue you'll see changes that start with saving the value of `fs:0x28` on the stack:
+
+```assembly
+B+> 0x5555555551e9 <say_hello>      endbr64
+    0x5555555551ed <say_hello+4>    push   rbp
+    0x5555555551ee <say_hello+5>    mov    rbp,rsp
+    0x5555555551f1 <say_hello+8>    sub    rsp,0x30
+    0x5555555551f5 <say_hello+12>   mov    QWORD PTR [rbp-0x28],rdi
+    0x5555555551f9 <say_hello+16>   mov    rax,QWORD PTR fs:0x28
+    0x555555555202 <say_hello+25>   mov    QWORD PTR [rbp-0x8],rax
+...
+```
+
+In the function epilogue you'll see how there is a check to see that value hasn't changed:
+
+```assembly
+    0x555555555295 <say_hello+172>  mov    rax, QWORD PTR [rbp-0x8]
+```
