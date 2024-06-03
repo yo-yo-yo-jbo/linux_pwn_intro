@@ -125,9 +125,10 @@ If course, this doesn't explain why we had to write `64` bits. There are some in
 2. Preference to optimize speed over memory - e.g. aiming for variables that are memory aligned.
 3. Compiler deciding to save certain registers on the stack. On Intel architectures that might involve the `rbp` register, as well as any other necessary register.
 
-The best approach is to open a debugger (`gdb`) alongside a disassembler. I will show two approaches: `static` analysis and `dynamic` analysis.
+The best approach is to open a debugger (`gdb`) alongside a disassembler. There are two approaches: `static` analysis and `dynamic` analysis, but I like to combine them.  
+However, in this particular exercise dynamically is easier.
 
-### Statically determining how many bytes to override
+### Determining how many bytes to override
 Opening a disassembler reveals the reason quite clearly, but I will be using `gdb` as a disassembler for now.  
 Note that by default, `gdb` uses the (terrible) AT&T Assembly syntax, and most people I know prefer the Intel syntax.  
 The command for that is `set disassembly-flavor intel`, but, since we're lazy, we can prepare a `.gdbinit` file, as well as showing disassembly:
@@ -181,8 +182,40 @@ B+> 0x5555555551c9 <say_hello>      endbr64
     0x555555555265 <say_hello+156>  nop
     0x555555555266 <say_hello+157>  leave
     0x555555555267 <say_hello+158>  ret
-    0x555555555268 <main>           endbr64
 ```
+
+Well, thst might look like a lot to handle, but one of the most important parts of reverse engineering is to focus on what's important!  
+In our case, we already know we have a potential issue with `gets`, and the comparison to `0x1337cafe` is clearly visible at `<say_hello+109>`.  
+So, how about we put a breakpoint there and give a very unique input? We could then recognize how many bytes we need to override!  
+
+```shell
+(gdb) b *say_hello+109
+Breakpoint 2 at 0x555555555236
+(gdb) c
+Continuing.
+What is your name? ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789
+Breakpoint 2, 0x555555555236 in say_hello () qrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!
+(gdb) p $eax
+$1 = 1111570744
+```
+
+So, after using the unique pattern (`ABCDE...`) we hit the comparison and see that the value of `eax` was changed to `1111570744`!  
+Well, if we see how that value looks in Hexadecimal form, it's `0x42413938`, and that's quite unique:
+
+```python
+>>> import struct
+>>> struct.pack('<L', 1111570744)
+b'89AB'
+```
+
+That's awesome, this means that the index of `89AB` is how many bytes we need to override!
+
+```python
+>>> 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'.index('89AB')
+60
+```
+
+So, after `60` bytes we should be writing the desired value (`0x1337CAFE`). To encode it, we remember Intel uses [Little Endian](https://en.wikipedia.org/wiki/Endianness) to encode integers, so we reverse the order of bytes!
 
 
 
