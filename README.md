@@ -1,7 +1,9 @@
 # Introduction to Linux pwn
 I hope this blogpost would be a nice introduction to Linux pwn challenges, I intend on doing a multi-part series on the subject.  
 The idea behind those challenges is usually gaining arbitrary code execution capabilities, either remotely or locally through the use of [SUID binary](https://en.wikipedia.org/wiki/Setuid) files.  
-In this blogpost I'll show the simplest example that I hand-coded. We will focus primarily on C and Linux, but not a lot of background is necessary for now!
+In this blogpost I'll show the simplest example that I hand-coded. We will focus primarily on C and Linux, but not a lot of background is necessary for now!  
+Remark: I will mostly cover the Intel architecture (64 bit). There are substantial differences between 32 and 64 bit, and even more when we talk about other architectures (e.g. ARM).  
+However, pwn data is transferrable in a general sense, so let us not worry about that now.
 
 ## First example
 Here's a toy examine for us to begin:
@@ -85,3 +87,13 @@ woot!
 ```
 
 Looks like we satisfied the condition of `*magic == 0x1337CAFE`! How?
+
+## What happened
+As I "gently" hinted, the `gets` function is the one doing all the harm. Note that `gets` does not get the target buffer length as an input.  
+As a result, `gets` is condidered *highly* dangerous as one can simply write more bytes than intended, and this is all it takes here.  
+In our example, the buffer size is `20` bytes, but we wrote `64` bytes instead! This raises the question - what happens "beyond" the 20 bytes of the `name` variable?  
+
+### The stack
+In most modern architectures, local variables are saved in a special memory region called "the stack". Actually, there's one stack per-thread, but we're dealing with a single-threaded process so the name *the* stack is justified.  
+The stack is interesting - it allows `push` and `pop` operations (in the `Intel` architecture - ARM is a bit more "raw" but most of its Assemblers has "push" and "pop" macros still) and most importantly - it grows *down* - when you `push`, you 
+
