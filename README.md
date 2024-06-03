@@ -310,5 +310,42 @@ B+> 0x5555555551e9 <say_hello>      endbr64
 In the function epilogue you'll see how there is a check to see that value hasn't changed:
 
 ```assembly
+...
     0x555555555295 <say_hello+172>  mov    rax, QWORD PTR [rbp-0x8]
+    0x555555555299 <say_hello+176>  sub    rax, QWORD PTR fs:0x28
+    0x5555555552a2 <say_hello+185>  je     0x5555555552a9 <say_hello+192>
+    0x5555555552a4 <say_hello+187>  call   0x5555555550b0 <__stack_chk_fail@plt>
+    0x5555555552a9 <say_hello+192>  leave
+    0x5555555552aa <say_hello+193>  ret
 ```
+
+The epilogue pulls the saved value from the stack (in `rbp-0x8`) and substracts `fs:0x28` from it - which should result in zero unless the value in the stack was somehow changed.  
+If the value is not zero then `__stack_chk_fail@plt` is called, which is the function that purposely crashes the stack and prints out the message we've seen.  
+That technique which is on by default on every modern C compiler is called `stack cookie` or `stack canary`.  
+The idea is simple - usually attackers aim at overriding the return address, so between the saved return address and the local variables, we save one more value which is *randomly* initialized.  
+That value is then checked, with the understanding that an attacker cannot guess a random 64-bit value.  
+This random value is initialized even before `main` is called. Note: if you're coming from Windows reverse-engineering background you'd notice the implementation is slightly different - instead of saving the random cookie pointed by the `fs` register, Windows treats it as a global variable in `.data`. The idea, however, is the same.  
+
+One thing that we haven't done is assessing the security mitigations of a binary, which can be easily done with [checksec](https://github.com/slimm609/checksec.sh):
+
+```shell
+$ checksec ./chall
+[*] '/home/jbo/chall'
+    Arch:     amd64-64-little
+    RELRO:    Full RELRO
+    Stack:    No canary found
+    NX:       NX enabled
+    PIE:      PIE enabled
+```
+
+This was done on the binary that was compiled with the `-fno-stack-protector` flag.  
+The `No canary found` is the indictor, and in `pwn` challenges that's one of the first things you'd do.  
+I intend on showcasing the other mitigations one by one, and how attackers deal with them, in future blogposts.
+
+## Summary
+This was a short a (hopefully) easy landing into Linux binary exploitation \ pwn.  
+We have examined a first stack smashing attack (without overriding the return address yet!) and explaining stack cookies \ canaries, as well as get a taste of `pwntools`.  
+There's more to come, I promise!
+
+Jonathan Bar Or
+
