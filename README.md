@@ -95,5 +95,13 @@ In our example, the buffer size is `20` bytes, but we wrote `64` bytes instead! 
 
 ### The stack
 In most modern architectures, local variables are saved in a special memory region called "the stack". Actually, there's one stack per-thread, but we're dealing with a single-threaded process so the name *the* stack is justified.  
-The stack is interesting - it allows `push` and `pop` operations (in the `Intel` architecture - ARM is a bit more "raw" but most of its Assemblers has "push" and "pop" macros still) and most importantly - it grows *down* - when you `push`, you 
+The stack is interesting - it allows `push` and `pop` operations (in the `Intel` architecture - ARM is a bit more "raw" but most of its Assemblers has "push" and "pop" macros still) and most importantly - it grows *down*. The top of the stack is marked by a register (`rsp`), and when you `push`, you *decrease* that value, while `pop`ping *increases* that value.  
+What is stack used for, besides local variables?
+1. Exception handlers sometimes use the stack.
+2. Variables are pushed on the stack, normally in the reverse-order of apperance. Note in `32` bit that is always true, while in `64` bits we push the first 6 parameters on registers: `rdi`, `rsi`, `rdx`, `rcx`, `r8` and `r9`. In ARM you'd see something similar - first few arguments use registers.
+3. Return addresses are pushed on the stack. The `call` Intel mnemonic is equivalent to `push rip` and `jmp <target>`, and the `ret` is equivalent to `pop rip`. This is *very* important since overriding stack memory (i.e. what we're doing now) might override return addresses, therefore taking control of the program flow. In `ARM` the `call` equivalent is `bl` or `blx` (the `x` denotes a potential change of processor mode, which I will not touch today) and performs `mov lr, pc` followed by `mov pc, <target>`. The `pc` register is the `rip` equivalent in `ARM`, and `lr` is a special `link register` that saves return addresses. However, if the function doesn't call a leaf function it's very necessary to save the previous `lr` register somewhere (otherwise, where would the current function return?) and that place is the stack again.
+
+ 
+
+
 
