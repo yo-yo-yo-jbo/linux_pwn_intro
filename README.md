@@ -91,7 +91,9 @@ Looks like we satisfied the condition of `*magic == 0x1337CAFE`! How?
 ## What happened
 As I "gently" hinted, the `gets` function is the one doing all the harm. Note that `gets` does not get the target buffer length as an input.  
 As a result, `gets` is condidered *highly* dangerous as one can simply write more bytes than intended, and this is all it takes here.  
-In our example, the buffer size is `20` bytes, but we wrote `64` bytes instead! This raises the question - what happens "beyond" the 20 bytes of the `name` variable?  
+In our example, the buffer size is `20` bytes, but we wrote `64` bytes instead  
+The ability to override a buffer beyond the intended length is called a `buffer overflow`, and in our case - the buffer lives on the stack.  
+This raises the question - what happens "beyond" the 20 bytes of the `name` variable?  
 
 ### The stack
 In most modern architectures, local variables are saved in a special memory region called "the stack". Actually, there's one stack per-thread, but we're dealing with a single-threaded process so the name *the* stack is justified.  
@@ -113,9 +115,22 @@ So, mentally, we should imagine (inaccurately) the following picture:
 HIGH ADDRSSES		magic			4 bytes
 			return address		8 bytes
 			name			20 bytes
-LOW ADDRSSES     TOP OF STACK  
+LOW ADDRSSES     	(TOP OF STACK)
 ```
 
-When we call `gets` we start overriding 
+When we call `gets` we start overriding from low addresses towards high addresses, therefore, after a certain amount we will override the return address and then the magic.  
+Since the check for `magic` happens before the return address is referenced and since `execve` never returns - the overridden return address is never referenced and we simply override `magic`.  
+If course, this doesn't explain why we had to write `64` bits. There are some interesting things that could affect the spacinb between stack positions, including:
+1. Compiler optimizations.
+2. Preference to optimize speed over memory - e.g. aiming for variables that are memory aligned.
+3. Compiler deciding to save certain registers on the stack. On Intel architectures that might involve the `rbp` register, as well as any other necessary register.
+
+The best approach is to open a debugger (`gdb`) alongside a disassembler. I will show two approaches: `static` analysis and `dynamic` analysis.
+
+### Statically determining how many bytes to override
+Opening a disassembler
+
+
+
 
 
