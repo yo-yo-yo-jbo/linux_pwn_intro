@@ -3,7 +3,7 @@ I hope this blogpost would be a nice introduction to Linux pwn challenges, I int
 The idea behind those challenges is usually gaining arbitrary code execution capabilities, either remotely or locally through the use of [SUID binary](https://en.wikipedia.org/wiki/Setuid) files.  
 In this blogpost I'll show the simplest example that I hand-coded. We will focus primarily on C and Linux, but not a lot of background is necessary for now!  
 Remark: I will mostly cover the Intel architecture (64 bit). There are substantial differences between 32 and 64 bit, and even more when we talk about other architectures (e.g. ARM).  
-However, pwn data is transferrable in a general sense, so let us not worry about that now.
+However, pwn knowledge is transferrable in a general sense, so let us not worry about that now.
 
 ## First example
 Here's a toy examine for us to begin:
