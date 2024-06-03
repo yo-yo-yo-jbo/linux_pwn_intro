@@ -128,9 +128,61 @@ If course, this doesn't explain why we had to write `64` bits. There are some in
 The best approach is to open a debugger (`gdb`) alongside a disassembler. I will show two approaches: `static` analysis and `dynamic` analysis.
 
 ### Statically determining how many bytes to override
-Opening a disassembler
+Opening a disassembler reveals the reason quite clearly, but I will be using `gdb` as a disassembler for now.  
+Note that by default, `gdb` uses the (terrible) AT&T Assembly syntax, and most people I know prefer the Intel syntax.  
+The command for that is `set disassembly-flavor intel`, but, since we're lazy, we can prepare a `.gdbinit` file, as well as showing disassembly:
 
+```shell
+echo set disassembly-flavor intel > ~/.gdbinit
+echo layout asm >> ~/.gdbinit
+```
 
+Let's put a breakpoint in `say_hello` with `b *say_hello` and run the program with `r`:
+
+```shell
+$ gdb ./chall
+(gdb) b *say_hello
+Breakpoint 1 at 0x11c9
+(gdb) r
+B+> 0x5555555551c9 <say_hello>      endbr64
+    0x5555555551cd <say_hello+4>    push   rbp
+    0x5555555551ce <say_hello+5>    mov    rbp,rsp
+    0x5555555551d1 <say_hello+8>    sub    rsp,0x30
+    0x5555555551d5 <say_hello+12>   mov    QWORD PTR [rbp-0x28],rdi
+    0x5555555551d9 <say_hello+16>   mov    QWORD PTR [rbp-0x20],0x0
+    0x5555555551e1 <say_hello+24>   mov    QWORD PTR [rbp-0x18],0x0
+    0x5555555551e9 <say_hello+32>   mov    DWORD PTR [rbp-0x10],0x0
+    0x5555555551f0 <say_hello+39>   lea    rax,[rip+0xe0d]        # 0x555555556004
+    0x5555555551f7 <say_hello+46>   mov    rdi,rax
+    0x5555555551fa <say_hello+49>   mov    eax,0x0
+    0x5555555551ff <say_hello+54>   call   0x5555555550b0 <printf@plt>
+    0x555555555204 <say_hello+59>   lea    rax,[rbp-0x20]
+    0x555555555208 <say_hello+63>   mov    rdi,rax
+    0x55555555520b <say_hello+66>   mov    eax,0x0
+    0x555555555210 <say_hello+71>   call   0x5555555550d0 <gets@plt>
+    0x555555555215 <say_hello+76>   lea    rax,[rbp-0x20]
+    0x555555555219 <say_hello+80>   mov    rsi,rax
+    0x55555555521c <say_hello+83>   lea    rax,[rip+0xdf5]        # 0x555555556018
+    0x555555555223 <say_hello+90>   mov    rdi,rax
+    0x555555555226 <say_hello+93>   mov    eax,0x0
+    0x55555555522b <say_hello+98>   call   0x5555555550b0 <printf@plt>
+    0x555555555230 <say_hello+103>  mov    rax,QWORD PTR [rbp-0x28]
+    0x555555555234 <say_hello+107>  mov    eax,DWORD PTR [rax]
+    0x555555555236 <say_hello+109>  cmp    eax,0x1337cafe
+    0x55555555523b <say_hello+114>  jne    0x555555555265 <say_hello+156>
+    0x55555555523d <say_hello+116>  lea    rax,[rip+0xddf]        # 0x555555556023
+    0x555555555244 <say_hello+123>  mov    rdi,rax
+    0x555555555247 <say_hello+126>  call   0x555555555090 <puts@plt>
+    0x55555555524c <say_hello+131>  mov    edx,0x0
+    0x555555555251 <say_hello+136>  mov    esi,0x0
+    0x555555555256 <say_hello+141>  lea    rax,[rip+0xdcc]        # 0x555555556029
+    0x55555555525d <say_hello+148>  mov    rdi,rax
+    0x555555555260 <say_hello+151>  call   0x5555555550c0 <execve@plt>
+    0x555555555265 <say_hello+156>  nop
+    0x555555555266 <say_hello+157>  leave
+    0x555555555267 <say_hello+158>  ret
+    0x555555555268 <main>           endbr64
+```
 
 
 
