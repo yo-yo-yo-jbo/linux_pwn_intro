@@ -257,3 +257,4 @@ $ exit
 [*] Got EOF while sending in interactive
 ```
 
+## Stack protections
