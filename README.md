@@ -131,11 +131,10 @@ However, in this particular exercise dynamically is easier.
 ### Determining how many bytes to override
 Opening a disassembler reveals the reason quite clearly, but I will be using `gdb` as a disassembler for now.  
 Note that by default, `gdb` uses the (terrible) AT&T Assembly syntax, and most people I know prefer the Intel syntax.  
-The command for that is `set disassembly-flavor intel`, but, since we're lazy, we can prepare a `.gdbinit` file, as well as showing disassembly:
+The command for that is `set disassembly-flavor intel`, but, since we're lazy, we can prepare a `.gdbinit` file:
 
 ```shell
 echo set disassembly-flavor intel > ~/.gdbinit
-echo layout asm >> ~/.gdbinit
 ```
 
 Let's put a breakpoint in `say_hello` with `b *say_hello` and run the program with `r`:
@@ -145,6 +144,11 @@ $ gdb ./chall
 (gdb) b *say_hello
 Breakpoint 1 at 0x11c9
 (gdb) r
+```
+
+After looking at the disassembly (using `layout asm` or `disas`):
+
+```assembly
 B+> 0x5555555551c9 <say_hello>      endbr64
     0x5555555551cd <say_hello+4>    push   rbp
     0x5555555551ce <say_hello+5>    mov    rbp,rsp
@@ -340,7 +344,27 @@ $ checksec ./chall
 
 This was done on the binary that was compiled with the `-fno-stack-protector` flag.  
 The `No canary found` is the indictor, and in `pwn` challenges that's one of the first things you'd do.  
-I intend on showcasing the other mitigations one by one, and how attackers deal with them, in future blogposts.
+I intend on showcasing the other mitigations one by one, and how attackers deal with them, in future blogposts.  
+
+By the way - this example also shows how stack cookies \ are *not* bulletproof! Since we call `execve` before using the return address, we can get to a situation where the `magic` value still correctly works, we just need a different number of bytes to push. As an exercise - try to figure our how many!
+
+```shell
+$ checksec ./chall
+[*] '/home/jbo/pwn_learn/chall'
+    Arch:     amd64-64-little
+    RELRO:    Full RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      PIE enabled
+$ ./solve.py
+[+] Starting local process './chall': pid 1993
+[*] Switching to interactive mode
+$ exit
+[*] Got EOF while reading in interactive
+$ exit
+[*] Process './chall' stopped with exit code 0 (pid 1993)
+[*] Got EOF while sending in interactive
+```
 
 ## Summary
 This was a short a (hopefully) easy landing into Linux binary exploitation \ pwn.  
