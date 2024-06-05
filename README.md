@@ -350,7 +350,7 @@ By the way - this example also shows how stack cookies \ are *not* bulletproof! 
 
 ```shell
 $ checksec ./chall
-[*] '/home/jbo/pwn_learn/chall'
+[*] '/home/jbo/chall'
     Arch:     amd64-64-little
     RELRO:    Full RELRO
     Stack:    Canary found
