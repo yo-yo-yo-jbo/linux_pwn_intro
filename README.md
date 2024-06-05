@@ -271,7 +271,7 @@ chall.c:(.text+0x57): warning: the `gets' function is dangerous and should not b
 $ ./solve.py
 [+] Starting local process './chall': pid 16628
 Traceback (most recent call last):
-  File "/home/jbo/pwn_learn/./solve.py", line 6, in <module>
+  File "/home/jbo/solve.py", line 6, in <module>
     p.recvuntil(b'woot!\n')
   File "/home/jbo/.local/lib/python3.10/site-packages/pwnlib/tubes/tube.py", line 341, in recvuntil
     res = self.recv(timeout=self.timeout)
